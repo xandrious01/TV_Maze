@@ -1,8 +1,11 @@
+
 "use strict";
 
+
 const $showsList = $("#showsList");
-// const $episodesArea = $("#episodesArea");
+const $episodesArea = $("#episodesArea");
 const $searchForm = $("#searchForm");
+
 
 async function getShowsByTerm(searchTerm) {
   const showsArray = [];
@@ -74,6 +77,7 @@ async function getEpisodesOfShow(e) {
 
 
 function populateEpisodes(showName, numberSeasons, episodes) {
+  $episodesArea.show();
   const $episodesModal = $(
     `<div class="modal" id="test">
        <div class="modal-content">
@@ -82,6 +86,7 @@ function populateEpisodes(showName, numberSeasons, episodes) {
             <h4 class="modal-title">${showName} Episodes</h4>
           </div>
           <div class="modal-body">
+          <div id="${showName}-seasons"></div>
             <table>
               <thead>
               </thead>
@@ -92,9 +97,14 @@ function populateEpisodes(showName, numberSeasons, episodes) {
        </div>
      </div>
     `);
+  const $seasonsDiv = $(`${showName}-seasons`);
+  addSeasonsButtons($seasonsDiv, showName, numberSeasons)
   console.log($episodesModal)
 }
 
-//  function addSeasonsButtons(){
-
-//  }
+ function addSeasonsButtons(div, showName, num){
+  for (let i=1; i<=num; i++) {
+    const seasonBtn = $(`<button class="btn btn-primary btn-sm seasonBtn" id="${showName}-S${i}">Season ${i}</button>`);
+    div.append(seasonBtn);
+  }
+ }
