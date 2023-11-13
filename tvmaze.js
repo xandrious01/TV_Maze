@@ -1,10 +1,10 @@
 
 "use strict";
 
-
 const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
 const $searchForm = $("#searchForm");
+const $episodesList = $("#episodesList");
 
 
 async function getShowsByTerm(searchTerm) {
@@ -36,7 +36,7 @@ function populateShows(shows) {
            <div class="media-body">
              <h5 class="text-primary">${show.name}</h5>
              <div><small>${show.summary}</small></div>
-             <button class="btn btn-outline-light btn-sm Show-getEpisodes" data-toggle="modal" data-target="#${show.name}-episodes">
+             <button class="btn btn-outline-light btn-sm Show-getEpisodes">
                Episodes
              </button>
            </div>
@@ -51,8 +51,6 @@ function populateShows(shows) {
 async function searchForShowAndDisplay() {
   const term = $("#searchForm-term").val();
   const shows = await getShowsByTerm(term);
-
-  // $episodesArea.hide();
   populateShows(shows);
 }
 
@@ -65,46 +63,46 @@ $searchForm.on("submit", async function (evt) {
 
 $showsList.on("click", ".Show-getEpisodes", getEpisodesOfShow);
 
-async function getEpisodesOfShow(e) {
+async function getEpisodesOfShow() {
   const parentDiv = this.parentElement.parentElement.parentElement;
   const showId = parentDiv.dataset.showId;
   const response = await axios.get(`https://api.tvmaze.com/shows/${showId}/episodes`);
-  const episodes = response.data.map(({ id, name, season, number }) => ({ id, name, season, number }));
-  const showName = $(this.parentElement.firstElementChild).html();
+  const episodes = response.data.map(({ id, name, season, number }) => ({ id, name, season, number })); 
   const numberSeasons = episodes[episodes.length - 1].season;
-  populateEpisodes(showName, numberSeasons, episodes);
+  populateEpisodes(numberSeasons, episodes);
 }
 
 
-function populateEpisodes(showName, numberSeasons, episodes) {
+function populateEpisodes(numberSeasons, episodes) {
   $episodesArea.show();
-  const $episodesModal = $(
-    `<div class="modal" id="test">
-       <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-            <h4 class="modal-title">${showName} Episodes</h4>
-          </div>
-          <div class="modal-body">
-          <div id="${showName}-seasons"></div>
-            <table>
-              <thead>
-              </thead>
-                <tbody class="table">
-                </tbody>
-            </table>
-          </div>
-       </div>
-     </div>
-    `);
-  const $seasonsDiv = $(`${showName}-seasons`);
-  addSeasonsButtons($seasonsDiv, showName, numberSeasons)
-  console.log($episodesModal)
+  $("#seasons").empty();
+  addSeasonsButtons(numberSeasons);
+  const grouped = groupBySeason(episodes, numberSeasons);
+  $("#seasons").on("click", ".seasonBtn", function(e){
+    $episodesList.empty();
+    const num = e.target.id.slice(7);
+    const season = grouped[num-1];
+    const episodes = season[num];
+    for (let i of episodes){
+      $episodesList.append($(`<li>"${i.name}" - Season ${i.season}, Ep ${i.number}</li>`))
+    }
+  })
 }
 
- function addSeasonsButtons(div, showName, num){
-  for (let i=1; i<=num; i++) {
-    const seasonBtn = $(`<button class="btn btn-primary btn-sm seasonBtn" id="${showName}-S${i}">Season ${i}</button>`);
-    div.append(seasonBtn);
+function addSeasonsButtons(num) {
+  for (let i = 1; i <= num; i++) {
+    const $seasonBtn = $(`<button class="btn btn-secondary btn-sm seasonBtn" id="season-${i}">Season ${i}</button>`);
+    $("#seasons").append($seasonBtn);
   }
- }
+}
+
+function groupBySeason(episodes, numberSeasons) {
+  const grouped = new Array();
+  for (let i=1; i<=numberSeasons; i++) {
+      let season = episodes.filter(ep => ep.season === i);
+      let seasonObj = {};
+      seasonObj[i] = season;
+      grouped.push(seasonObj);
+  }
+  return grouped;
+}
